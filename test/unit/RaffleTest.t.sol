@@ -36,7 +36,7 @@ contract RaffleTest is Test {
             subscriptionId,
             callbackGasLimit,
             link,
-            
+
         ) = helperConfig.activeNetworkConfig();
         vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
@@ -96,7 +96,20 @@ contract RaffleTest is Test {
         assert(upkeepNeeded == false);
     }
 
-    function testPerformUpkeepOnlyRunCheckIsTrue() public {
+    modifier raffleEnteredAndTimePass() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: enteranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        _;
+    }
+
+    modifier skipFork() {
+        if (block.chainid != 31337) return;
+        _;
+    }
+
+    function testPerformUpkeepOnlyRunCheckIsTrue() public skipFork {
         vm.prank(PLAYER);
         raffle.enterRaffle{value: enteranceFee}();
         vm.warp(block.timestamp + interval + 1);
@@ -119,14 +132,6 @@ contract RaffleTest is Test {
         raffle.performUpkeep("");
     }
 
-    modifier raffleEnteredAndTimePass() {
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: enteranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-        _;
-    }
-
     function testPerformUpkeepUpdates() public raffleEnteredAndTimePass {
         vm.recordLogs();
         raffle.performUpkeep("");
@@ -141,7 +146,7 @@ contract RaffleTest is Test {
 
     function testFulfillRandomWordsCall(
         uint256 randomRequestId
-    ) public raffleEnteredAndTimePass {
+    ) public raffleEnteredAndTimePass skipFork {
         vm.expectRevert("nonexistent request");
         VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
             randomRequestId,
@@ -152,6 +157,7 @@ contract RaffleTest is Test {
     function testFulfillRandomWordsPicksResetAndSend()
         public
         raffleEnteredAndTimePass
+        skipFork
     {
         uint256 additionalEntrants = 5;
         uint256 startingIndex = 1;
