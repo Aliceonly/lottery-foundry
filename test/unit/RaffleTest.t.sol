@@ -35,7 +35,8 @@ contract RaffleTest is Test {
             gasLine,
             subscriptionId,
             callbackGasLimit,
-            link
+            link,
+            
         ) = helperConfig.activeNetworkConfig();
         vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
@@ -182,6 +183,9 @@ contract RaffleTest is Test {
         assert(raffle.getRecentWinner() != address(0));
         assert(raffle.getLengthOfPlayers() == 0);
         assert(previousTimeStamp < raffle.getLastTimeStamp());
-        assert(raffle.getRecentWinner().balance == STARTING_USER_BALANCE + price - enteranceFee);
+        assert(
+            raffle.getRecentWinner().balance ==
+                STARTING_USER_BALANCE + price - enteranceFee
+        );
     }
 }

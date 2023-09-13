@@ -4,10 +4,10 @@ pragma solidity ^0.8.18;
 import {Script} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
-import {CreateSubscription,FundSubscription,AddComsumer} from "./Interactions.s.sol";
+import {CreateSubscription, FundSubscription, AddComsumer} from "./Interactions.s.sol";
 
 contract DeployRaffle is Script {
-    function run() external returns (Raffle,HelperConfig) {
+    function run() external returns (Raffle, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
         (
             uint256 enteranceFee,
@@ -16,15 +16,24 @@ contract DeployRaffle is Script {
             bytes32 gasLine,
             uint64 subscriptionId,
             uint32 callbackGasLimit,
-            address link
+            address link,
+            uint256 deployerKey
         ) = helperConfig.activeNetworkConfig();
 
-        if(subscriptionId == 0){
+        if (subscriptionId == 0) {
             CreateSubscription createSubscription = new CreateSubscription();
-            subscriptionId = createSubscription.createSubscription(vrfCoordinator);
+            subscriptionId = createSubscription.createSubscription(
+                vrfCoordinator,
+                deployerKey
+            );
 
             FundSubscription fundSubscription = new FundSubscription();
-            fundSubscription.fundSubscription(vrfCoordinator, subscriptionId, link);
+            fundSubscription.fundSubscription(
+                vrfCoordinator,
+                subscriptionId,
+                link,
+                deployerKey
+            );
         }
 
         vm.startBroadcast();
@@ -39,8 +48,13 @@ contract DeployRaffle is Script {
         vm.stopBroadcast();
 
         AddComsumer addComsumer = new AddComsumer();
-        addComsumer.addConsumer(address(raffle), vrfCoordinator, subscriptionId);
+        addComsumer.addConsumer(
+            address(raffle),
+            vrfCoordinator,
+            subscriptionId,
+            deployerKey
+        );
 
-        return (raffle,helperConfig);
+        return (raffle, helperConfig);
     }
 }
